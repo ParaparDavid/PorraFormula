@@ -12,7 +12,20 @@
           "package_name": "com.porraformula"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "964490293967-5i04l42nocj4d4chlq7jc0daspj19pp9.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.porraformula",
+            "certificate_hash": "55545cebe143162e153e42650c0394ddcb661af9"
+          }
+        },
+        {
+          "client_id": "964490293967-ejr0512ska3d7vevlidgp2q6ue2oa5kj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBvSiMZEnz5v88rcBosENlzfwkOvSAlnpg"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "964490293967-ejr0512ska3d7vevlidgp2q6ue2oa5kj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
