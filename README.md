@@ -17,6 +17,6 @@ Plan completo: ver el documento "Plan de la app móvil de porra F1".
 - `npx expo start` arrancar en desarrollo
 
 ## Pendiente conocido
-- Las reglas de Firestore no están probadas con el emulador.
+- Las reglas de Firestore (grupos, miembros, códigos) tienen tests en `rules-test/`, pero aún no se han ejecutado con el emulador.
 - Las predicciones aún se pueden editar tras el cierre: falta el bloqueo por Cloud Function.
 - `com.porraformula` es el identificador de la app; es permanente una vez publicada.

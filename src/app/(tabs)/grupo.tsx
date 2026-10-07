@@ -1,37 +1,59 @@
-import { Text, View } from 'react-native';
-import { Card, Screen, text } from '../../components/ui';
-import { CLASSIC_5_SENTIDOS, type Rule } from '../../engine';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
+import { ActivityIndicator, Text, View } from 'react-native';
+import { Button, Card, Screen, text } from '../../components/ui';
+import { listMyGroups, type Membership } from '../../data/groups';
+import { signOut } from '../../firebase/auth';
+import { useAuth } from '../../firebase/AuthContext';
 import { colors } from '../../theme';
 
-const LABEL: Record<Rule['type'], string> = {
-  pole_correct: 'Acertar la pole',
-  pole_q1_out: 'Pole que no pasa Q1',
-  pole_dnf: 'Pole que no acaba la carrera',
-  top_positions: 'Posición exacta del top 10',
-  bonus_position: 'Posición bonus (sorteo)',
-  gafe_position: 'Posición gafe (sorteo)',
-  team_both_finish: 'Escudería: ambos coches acaban',
-  team_dnf: 'Escudería: coche que no acaba',
-  blank_field: 'Campo sin rellenar',
-};
+export default function Grupos() {
+  const { user } = useAuth();
+  const [groups, setGroups] = useState<Membership[] | null>(null);
+  const [error, setError] = useState('');
 
-function valueOf(r: Rule): string {
-  if (r.type === 'top_positions') return r.points.join(' / ');
-  if (r.type === 'team_dnf') return `${r.pointsPerCar} por coche`;
-  return r.points > 0 ? `+${r.points}` : `${r.points}`;
-}
+  useFocusEffect(
+    useCallback(() => {
+      if (!user) return;
+      let alive = true;
+      listMyGroups(user.uid)
+        .then((g) => alive && (setGroups(g), setError('')))
+        .catch(() => alive && setError('No se pudieron cargar tus grupos. Comprueba la conexión.'));
+      return () => {
+        alive = false;
+      };
+    }, [user]),
+  );
 
-export default function Grupo() {
+  if (!user) {
+    return (
+      <Screen title="Grupos" subtitle="Necesitas una cuenta para crear o unirte a un grupo.">
+        <Card><Text style={text.muted}>Estás en modo de pruebas sin cuenta.</Text></Card>
+      </Screen>
+    );
+  }
+
   return (
-    <Screen title="Grupo" subtitle="Reglas: plantilla Clásica 5 Sentidos (solo lectura por ahora)">
-      {CLASSIC_5_SENTIDOS.map((r) => (
-        <Card key={r.id}>
-          <Text style={[text.body, { flex: 1 }]}>{LABEL[r.type]}</Text>
-          <View>
-            <Text style={{ color: colors.accent, fontWeight: '800' }}>{valueOf(r)}</Text>
+    <Screen title="Grupos" subtitle={user.displayName ?? user.email ?? ''}>
+      {groups === null && !error ? <ActivityIndicator color={colors.accent} style={{ marginTop: 24 }} /> : null}
+      {error ? <Text style={{ color: colors.bad, marginTop: 12 }}>{error}</Text> : null}
+      {groups?.length === 0 ? (
+        <Card style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+          <Text style={text.h2}>Aún no estás en ningún grupo</Text>
+          <Text style={[text.muted, { marginTop: 4 }]}>Crea uno o únete con el código que te pase un amigo.</Text>
+        </Card>
+      ) : null}
+      {groups?.map((g) => (
+        <Card key={g.groupId} onPress={() => router.push({ pathname: '/grupos/[id]', params: { id: g.groupId } })}>
+          <View style={{ flex: 1 }}>
+            <Text style={text.body}>{g.name}</Text>
+            <Text style={text.muted}>{g.role === 'admin' ? 'Administrador' : 'Miembro'}</Text>
           </View>
         </Card>
       ))}
+      <Button label="Crear un grupo" onPress={() => router.push('/grupos/nuevo')} />
+      <Button variant="ghost" label="Unirme con un código" onPress={() => router.push('/grupos/unirse')} />
+      <Button variant="ghost" label="Cerrar sesión" onPress={() => signOut()} />
     </Screen>
   );
 }

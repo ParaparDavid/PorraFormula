@@ -3,33 +3,63 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     function signedIn() { return request.auth != null; }
-    function isMember(g) { return signedIn() && request.auth.uid in get(/databases/$(database)/documents/groups/$(g)).data.memberIds; }
-    function isAdmin(g) { return signedIn() && request.auth.uid in get(/databases/$(database)/documents/groups/$(g)).data.adminIds; }
+    function groupPath(g) { return /databases/$(database)/documents/groups/$(g); }
+    function memberPath(g, uid) { return /databases/$(database)/documents/groups/$(g)/members/$(uid); }
+    function isMember(g) { return signedIn() && exists(memberPath(g, request.auth.uid)); }
+    function isAdmin(g) { return isMember(g) && get(memberPath(g, request.auth.uid)).data.role == 'admin'; }
 
-    // Datos de F1 (calendario, pilotos, resultados): solo los escribe el servidor (Cloud Functions).
+    // Datos de F1 (calendario, pilotos, resultados): solo los escribe el servidor.
     match /f1/{document=**} {
       allow read: if signedIn();
       allow write: if false;
     }
 
-    // Perfil propio.
+    // Perfil propio y lista de mis grupos (solo sirve para listarlos; el acceso real lo da /members).
     match /users/{uid} {
       allow read, write: if signedIn() && request.auth.uid == uid;
+      match /memberships/{g} {
+        allow read, write: if signedIn() && request.auth.uid == uid;
+      }
+    }
+
+    // Código de invitación -> grupo. Se puede consultar uno concreto, pero no listarlos.
+    match /inviteCodes/{code} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if signedIn()
+        && !exists(/databases/$(database)/documents/inviteCodes/$(code))
+        && request.resource.data.createdBy == request.auth.uid
+        && getAfter(groupPath(request.resource.data.groupId)).data.ownerId == request.auth.uid;
+      allow update, delete: if false;
     }
 
     match /groups/{g} {
       allow read: if isMember(g);
-      // Crear un grupo: quien lo crea es el único miembro y administrador.
-      allow create: if signedIn()
-        && request.resource.data.ownerId == request.auth.uid
-        && request.resource.data.memberIds == [request.auth.uid]
-        && request.resource.data.adminIds == [request.auth.uid];
-      // Editar (reglas, nombre...): solo administradores. Unirse por código irá por Cloud Function.
-      allow update: if isAdmin(g);
+      allow create: if signedIn() && request.resource.data.ownerId == request.auth.uid;
+      // El dueño no cambia; los admins editan nombre, reglas, etc.
+      allow update: if isAdmin(g) && request.resource.data.ownerId == resource.data.ownerId;
       allow delete: if signedIn() && resource.data.ownerId == request.auth.uid;
 
+      match /members/{uid} {
+        allow read: if isMember(g);
+        allow create: if signedIn() && request.auth.uid == uid && (
+          // El creador se añade como admin en el mismo lote en que crea el grupo.
+          (request.resource.data.role == 'admin'
+            && !exists(groupPath(g))
+            && getAfter(groupPath(g)).data.ownerId == uid)
+          // Quien conoce un código válido de este grupo entra como miembro.
+          || (request.resource.data.role == 'member'
+            && get(/databases/$(database)/documents/inviteCodes/$(request.resource.data.code)).data.groupId == g)
+        );
+        // Los admins cambian roles, salvo el del dueño.
+        allow update: if isAdmin(g) && uid != get(groupPath(g)).data.ownerId;
+        // Salir uno mismo (el dueño no) o expulsar siendo admin (al dueño no).
+        allow delete: if signedIn() && uid != get(groupPath(g)).data.ownerId
+          && (request.auth.uid == uid || isAdmin(g));
+      }
+
       // Predicciones: cada uno lee y escribe solo la suya.
-      // Las de los demás se publican tras el cierre en /revealed (Cloud Function).
+      // Las de los demás se publicarán tras el cierre en /revealed (Cloud Function).
       match /picks/{pickId} {
         allow read: if isMember(g) && resource.data.uid == request.auth.uid;
         allow create, update: if isMember(g)

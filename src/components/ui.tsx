@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, radius, spacing } from '../theme';
 
@@ -35,6 +35,38 @@ export function Button({ label, onPress, variant = 'primary' }: { label: string;
     >
       <Text style={[s.buttonText, { color: primary ? colors.accentText : colors.text }]}>{label}</Text>
     </Pressable>
+  );
+}
+
+export function Field({ label, value, onChangeText, placeholder, autoCapitalize = 'sentences', maxLength }: {
+  label: string;
+  value: string;
+  onChangeText: (t: string) => void;
+  placeholder?: string;
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  maxLength?: number;
+}) {
+  return (
+    <View style={{ marginTop: spacing.md }}>
+      <Text style={{ color: colors.textMuted, fontSize: 12, marginBottom: 6 }}>{label}</Text>
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={colors.textMuted}
+        autoCapitalize={autoCapitalize}
+        maxLength={maxLength}
+        style={{
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+          borderWidth: 1,
+          borderRadius: radius.md,
+          color: colors.text,
+          fontSize: 16,
+          padding: spacing.md,
+        }}
+      />
+    </View>
   );
 }
 

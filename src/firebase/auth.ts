@@ -40,11 +40,15 @@ export async function signInWithGoogle(): Promise<SignInOutcome> {
   if (!idToken) throw new Error('Google no devolvió el token de acceso.');
   const cred = await signInWithCredential(getAuthInstance(), GoogleAuthProvider.credential(idToken));
   const u = cred.user;
-  await setDoc(
-    doc(db, 'users', u.uid),
-    { displayName: u.displayName ?? '', photoURL: u.photoURL ?? '', lastLoginAt: serverTimestamp() },
-    { merge: true },
-  );
+  try {
+    await setDoc(
+      doc(db, 'users', u.uid),
+      { displayName: u.displayName ?? '', photoURL: u.photoURL ?? '', lastLoginAt: serverTimestamp() },
+      { merge: true },
+    );
+  } catch {
+    /* el perfil se reintenta en el próximo acceso; no debe impedir entrar */
+  }
   return 'ok';
 }
 
