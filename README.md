@@ -13,9 +13,10 @@ Plan completo: ver el documento "Plan de la app móvil de porra F1".
 ## Comandos
 - `npm test` tests del motor
 - `npm run typecheck` comprobar tipos
+- `npm run test:rules` probar `firestore.rules` con el emulador (necesita Java 21 o superior; sin ejecutar aún)
 - `npx expo start` arrancar en desarrollo
 
 ## Pendiente conocido
 - Las reglas de Firestore no están probadas con el emulador.
 - Las predicciones aún se pueden editar tras el cierre: falta el bloqueo por Cloud Function.
-- `com.tinglao.porraformula` es un identificador provisional. Es permanente una vez publicada la app.
+- `com.porraformula` es el identificador de la app; es permanente una vez publicada.

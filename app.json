@@ -8,7 +8,7 @@
     "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.tinglao.porraformula"
+      "bundleIdentifier": "com.porraformula"
     },
     "android": {
       "adaptiveIcon": {
@@ -18,7 +18,7 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.tinglao.porraformula"
+      "package": "com.porraformula"
     },
     "web": {
       "favicon": "./assets/favicon.png"
