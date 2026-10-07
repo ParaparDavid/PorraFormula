@@ -18,11 +18,25 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.porraformula"
+      "package": "com.porraformula",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
     },
-    "scheme": "porraformula"
+    "scheme": "porraformula",
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "owner": "paraparin",
+    "extra": {
+      "eas": {
+        "projectId": "8a785baf-b1cd-4ec4-9fde-599066197734"
+      }
+    }
   }
 }

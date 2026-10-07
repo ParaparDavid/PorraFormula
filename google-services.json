@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "964490293967",
+    "project_id": "porraformula",
+    "storage_bucket": "porraformula.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:964490293967:android:5b23d65c15deca0e28fdba",
+        "android_client_info": {
+          "package_name": "com.porraformula"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBvSiMZEnz5v88rcBosENlzfwkOvSAlnpg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
