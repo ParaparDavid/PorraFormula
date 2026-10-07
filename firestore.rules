@@ -1,0 +1,53 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isMember(g) { return signedIn() && request.auth.uid in get(/databases/$(database)/documents/groups/$(g)).data.memberIds; }
+    function isAdmin(g) { return signedIn() && request.auth.uid in get(/databases/$(database)/documents/groups/$(g)).data.adminIds; }
+
+    // Datos de F1 (calendario, pilotos, resultados): solo los escribe el servidor (Cloud Functions).
+    match /f1/{document=**} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    // Perfil propio.
+    match /users/{uid} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+    }
+
+    match /groups/{g} {
+      allow read: if isMember(g);
+      // Crear un grupo: quien lo crea es el único miembro y administrador.
+      allow create: if signedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.memberIds == [request.auth.uid]
+        && request.resource.data.adminIds == [request.auth.uid];
+      // Editar (reglas, nombre...): solo administradores. Unirse por código irá por Cloud Function.
+      allow update: if isAdmin(g);
+      allow delete: if signedIn() && resource.data.ownerId == request.auth.uid;
+
+      // Predicciones: cada uno lee y escribe solo la suya.
+      // Las de los demás se publican tras el cierre en /revealed (Cloud Function).
+      match /picks/{pickId} {
+        allow read: if isMember(g) && resource.data.uid == request.auth.uid;
+        allow create, update: if isMember(g)
+          && request.resource.data.uid == request.auth.uid
+          && pickId == request.resource.data.raceId + '__' + request.auth.uid;
+        allow delete: if false;
+      }
+
+      match /revealed/{raceId} {
+        allow read: if isMember(g);
+        allow write: if false;
+      }
+
+      // Correcciones manuales de resultados.
+      match /overrides/{raceId} {
+        allow read: if isMember(g);
+        allow write: if isAdmin(g);
+      }
+    }
+  }
+}
