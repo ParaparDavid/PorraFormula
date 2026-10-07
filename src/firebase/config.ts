@@ -18,4 +18,4 @@ export const db = getFirestore(app);
  * ID de cliente web de Google (Firebase → Authentication → Método de acceso → Google →
  * "Configuración del SDK web" → ID de cliente web). Hace falta para el acceso con Google.
  */
-export const GOOGLE_WEB_CLIENT_ID = '';
+export const GOOGLE_WEB_CLIENT_ID = '964490293967-ejr0512ska3d7vevlidgp2q6ue2oa5kj.apps.googleusercontent.com';
