@@ -25,7 +25,14 @@ export default function Prediccion() {
       <OptionPicker label="Pole" value={pick.pole} options={driverOptions} onChange={(v) => setPick((p) => ({ ...p, pole: v }))} />
       <OptionPicker label="Escudería" value={pick.team} options={teamOptions} onChange={(v) => setPick((p) => ({ ...p, team: v }))} />
       {pick.top10.map((v, i) => (
-        <OptionPicker key={i} label={`Posición ${i + 1}`} value={v} options={driverOptions} onChange={(x) => setTop(i, x)} />
+        <OptionPicker
+          key={i}
+          label={`Posición ${i + 1}`}
+          value={v}
+          // Un piloto ya elegido en otra posición del top 10 no aparece. La pole es aparte y sí puede repetirse.
+          options={driverOptions.filter((o) => o.id === v || !pick.top10.includes(o.id))}
+          onChange={(x) => setTop(i, x)}
+        />
       ))}
       <Button
         label="Guardar predicción"
