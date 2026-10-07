@@ -1,8 +1,21 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { LoginScreen } from '../components/LoginScreen';
+import { AuthProvider, useAuth } from '../firebase/AuthContext';
 import { colors } from '../theme';
 
 export default function RootLayout() {
+  return (
+    <AuthProvider>
+      <Gate />
+    </AuthProvider>
+  );
+}
+
+function Gate() {
+  const { user, guest, loading } = useAuth();
+  if (loading) return null;
+  if (!user && !guest) return <LoginScreen />;
   return (
     <>
       <StatusBar style="light" />

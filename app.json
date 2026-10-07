@@ -27,7 +27,9 @@
     },
     "scheme": "porraformula",
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "@react-native-google-signin/google-signin",
+      "expo-dev-client"
     ],
     "experiments": {
       "typedRoutes": true
