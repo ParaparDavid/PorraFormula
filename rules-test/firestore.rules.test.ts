@@ -5,10 +5,16 @@ import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
 
 let env: RulesTestEnvironment;
 
+// Calendario de prueba, para que los tests no dependan de la fecha real:
+// r01 ya cerrada (instante 1) y r02 abierta hasta el año 2100.
+const TEST_CLOSES = `// BEGIN CLOSES\n        'r01': 1,\n        'r02': 4102444800000\n        // END CLOSES`;
+const testRules = () =>
+  readFileSync('firestore.rules', 'utf8').replace(/\/\/ BEGIN CLOSES[\s\S]*?\/\/ END CLOSES/, TEST_CLOSES);
+
 beforeAll(async () => {
   env = await initializeTestEnvironment({
     projectId: 'porraformula-rules-test',
-    firestore: { rules: readFileSync('firestore.rules', 'utf8'), host: '127.0.0.1', port: 8080 },
+    firestore: { rules: testRules(), host: '127.0.0.1', port: 8080 },
   });
 });
 afterAll(async () => env.cleanup());
@@ -94,14 +100,36 @@ describe('salir y expulsar', () => {
 });
 
 describe('predicciones', () => {
-  it('escribir la propia', () =>
-    assertSucceeds(setDoc(doc(as('beto'), 'groups/g1/picks/r02__beto'), { uid: 'beto', raceId: 'r02', pole: 'HAM' })));
+  const pick = (uid: string, raceId: string, extra: object = {}) => ({
+    uid,
+    raceId,
+    pole: 'HAM',
+    team: 'ferrari',
+    top10: ['', '', '', '', '', '', '', '', '', ''],
+    ...extra,
+  });
+  it('escribir la propia en una carrera abierta', () =>
+    assertSucceeds(setDoc(doc(as('beto'), 'groups/g1/picks/r02__beto'), pick('beto', 'r02'))));
+  it('editarla otra vez mientras siga abierta', async () => {
+    await assertSucceeds(setDoc(doc(as('beto'), 'groups/g1/picks/r02__beto'), pick('beto', 'r02')));
+    await assertSucceeds(setDoc(doc(as('beto'), 'groups/g1/picks/r02__beto'), pick('beto', 'r02', { pole: 'VER' })));
+  });
+  it('no se puede escribir ni editar tras el cierre', async () => {
+    await assertFails(setDoc(doc(as('beto'), 'groups/g1/picks/r01__beto'), pick('beto', 'r01', { pole: 'VER' })));
+    await assertFails(updateDoc(doc(as('beto'), 'groups/g1/picks/r01__beto'), { pole: 'NOR' }));
+  });
+  it('una carrera que no existe en el calendario se rechaza', () =>
+    assertFails(setDoc(doc(as('beto'), 'groups/g1/picks/r99__beto'), pick('beto', 'r99'))));
   it('no a nombre de otro', () =>
-    assertFails(setDoc(doc(as('beto'), 'groups/g1/picks/r02__ana'), { uid: 'ana', raceId: 'r02', pole: 'HAM' })));
+    assertFails(setDoc(doc(as('beto'), 'groups/g1/picks/r02__ana'), pick('ana', 'r02'))));
   it('el id debe coincidir con carrera y usuario', () =>
-    assertFails(setDoc(doc(as('beto'), 'groups/g1/picks/otra'), { uid: 'beto', raceId: 'r02', pole: 'HAM' })));
+    assertFails(setDoc(doc(as('beto'), 'groups/g1/picks/otra'), pick('beto', 'r02'))));
+  it('el top 10 debe tener 10 posiciones', () =>
+    assertFails(setDoc(doc(as('beto'), 'groups/g1/picks/r02__beto'), pick('beto', 'r02', { top10: ['VER'] }))));
+  it('no admite campos extra', () =>
+    assertFails(setDoc(doc(as('beto'), 'groups/g1/picks/r02__beto'), pick('beto', 'r02', { puntos: 999 }))));
   it('quien no es miembro no escribe', () =>
-    assertFails(setDoc(doc(as('carla'), 'groups/g1/picks/r02__carla'), { uid: 'carla', raceId: 'r02', pole: 'HAM' })));
+    assertFails(setDoc(doc(as('carla'), 'groups/g1/picks/r02__carla'), pick('carla', 'r02'))));
   it('lee la suya', () => assertSucceeds(getDoc(doc(as('beto'), 'groups/g1/picks/r01__beto'))));
   it('no lee la de otro antes del cierre', () => assertFails(getDoc(doc(as('ana'), 'groups/g1/picks/r01__beto'))));
 });

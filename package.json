@@ -34,7 +34,8 @@
     "web": "expo start --web",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "test:rules": "npx firebase-tools emulators:exec --only firestore --project porraformula-rules-test \"vitest run --config vitest.rules.config.mts\""
+    "test:rules": "npx firebase-tools emulators:exec --only firestore --project porraformula-rules-test \"vitest run --config vitest.rules.config.mts\"",
+    "gen:rules": "node --no-warnings scripts/gen-rules.mts"
   },
   "private": true
 }

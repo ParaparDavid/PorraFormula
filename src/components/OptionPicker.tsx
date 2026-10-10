@@ -12,19 +12,21 @@ export function OptionPicker({
   options,
   onChange,
   placeholder = 'Elegir',
+  disabled = false,
 }: {
   label: string;
   value: string;
   options: Option[];
   onChange: (id: string) => void;
   placeholder?: string;
+  disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const insets = useSafeAreaInsets();
   const current = options.find((o) => o.id === value);
   return (
     <>
-      <Pressable onPress={() => setOpen(true)} style={s.field}>
+      <Pressable onPress={() => !disabled && setOpen(true)} style={[s.field, disabled && { opacity: 0.6 }]}>
         <Text style={s.label}>{label}</Text>
         <View style={s.valueRow}>
           {current?.color ? <View style={[s.dot, { backgroundColor: current.color }]} /> : null}

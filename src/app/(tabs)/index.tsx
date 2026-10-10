@@ -1,13 +1,15 @@
 import { router } from 'expo-router';
 import { Text, View } from 'react-native';
 import { Button, Card, Screen, text } from '../../components/ui';
-import { daysUntil, formatDate, nextRace } from '../../data/f1';
+import { closeLabel, isOpen, nextOpenRace } from '../../data/deadlines';
+import { daysUntil, formatDate, nextRace, RACES } from '../../data/f1';
 import { hasPick, usePicksVersion } from '../../data/picksStore';
 import { colors } from '../../theme';
 
 export default function Inicio() {
   usePicksVersion();
   const race = nextRace();
+  const openRace = nextOpenRace(RACES);
   if (!race) {
     return (
       <Screen title="La Porra de la Fórmula" subtitle="Temporada 2026">
@@ -16,7 +18,9 @@ export default function Inicio() {
     );
   }
   const days = daysUntil(race.date);
+  const raceOpen = isOpen(race.date);
   const done = hasPick(race.id);
+  const go = (id: string) => router.push({ pathname: '/prediccion/[id]', params: { id } });
   return (
     <Screen title="La Porra de la Fórmula" subtitle="Temporada 2026">
       <Text style={[text.muted, { marginTop: 8 }]}>PRÓXIMO GRAN PREMIO</Text>
@@ -31,12 +35,23 @@ export default function Inicio() {
         </View>
       </Card>
       <Card style={{ flexDirection: 'column', alignItems: 'stretch' }}>
-        <Text style={text.h2}>{done ? 'Predicción guardada' : 'Predicción pendiente'}</Text>
-        <Text style={[text.muted, { marginTop: 4 }]}>
-          {done ? 'Puedes cambiarla hasta que cierre.' : 'Aún no has rellenado esta carrera.'}
+        <Text style={text.h2}>
+          {raceOpen ? (done ? 'Predicción guardada' : 'Predicción pendiente') : done ? 'Predicción cerrada' : 'Esta carrera ya está cerrada'}
         </Text>
-        <Button label={done ? 'Editar predicción' : 'Hacer predicción'} onPress={() => router.push({ pathname: '/prediccion/[id]', params: { id: race.id } })} />
+        <Text style={[text.muted, { marginTop: 4 }]}>
+          {raceOpen ? `Puedes cambiarla hasta el ${closeLabel(race.date)} (hora de España).` : 'Ya no se pueden hacer ni cambiar predicciones de esta carrera.'}
+        </Text>
+        {raceOpen ? <Button label={done ? 'Editar predicción' : 'Hacer predicción'} onPress={() => go(race.id)} /> : null}
       </Card>
+      {openRace && openRace.id !== race.id ? (
+        <Card style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+          <Text style={text.h2}>Siguiente carrera abierta: {openRace.name}</Text>
+          <Text style={[text.muted, { marginTop: 4 }]}>
+            Cierra el {closeLabel(openRace.date)}. En Carreras puedes rellenar todas las que quieras por adelantado.
+          </Text>
+          <Button variant="ghost" label={hasPick(openRace.id) ? 'Editar predicción' : 'Hacer predicción'} onPress={() => go(openRace.id)} />
+        </Card>
+      ) : null}
     </Screen>
   );
 }

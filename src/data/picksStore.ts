@@ -1,24 +1,49 @@
 import { useSyncExternalStore } from 'react';
 import { emptyPick, type Pick } from '../engine';
 
-// Almacén en memoria (provisional): se sustituirá por Firestore al conectar la cuenta.
+// Copia local de mis predicciones (la fuente de verdad es Firestore, en cada grupo mío).
 const picks = new Map<string, Pick>();
+let groupIds: string[] = [];
 const listeners = new Set<() => void>();
 let version = 0;
+const notify = () => {
+  version++;
+  listeners.forEach((l) => l());
+};
+
+const copy = (p: Pick): Pick => ({ ...p, top10: [...p.top10] });
 
 export function getPick(raceId: string): Pick {
   const p = picks.get(raceId);
-  return p ? { ...p, top10: [...p.top10] } : emptyPick();
+  return p ? copy(p) : emptyPick();
 }
 export function hasPick(raceId: string): boolean {
   return picks.has(raceId);
 }
-export function savePick(raceId: string, pick: Pick) {
-  picks.set(raceId, { ...pick, top10: [...pick.top10] });
-  version++;
-  listeners.forEach((l) => l());
+export function countPicks(): number {
+  return picks.size;
 }
-/** Re-renderiza al guardar cualquier predicción. */
+export function savePick(raceId: string, pick: Pick) {
+  picks.set(raceId, copy(pick));
+  notify();
+}
+/** Sustituye todo lo guardado por lo que hay en Firestore. */
+export function replacePicks(all: Record<string, Pick>) {
+  picks.clear();
+  for (const [id, p] of Object.entries(all)) picks.set(id, copy(p));
+  notify();
+}
+export function setGroupIds(ids: string[]) {
+  groupIds = ids;
+  notify();
+}
+export const getGroupIds = () => groupIds;
+export function resetPicks() {
+  picks.clear();
+  groupIds = [];
+  notify();
+}
+/** Re-renderiza al cambiar cualquier predicción o la lista de grupos. */
 export function usePicksVersion(): number {
   return useSyncExternalStore(
     (cb) => {

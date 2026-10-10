@@ -6,6 +6,36 @@ service cloud.firestore {
     function groupPath(g) { return /databases/$(database)/documents/groups/$(g); }
     function memberPath(g, uid) { return /databases/$(database)/documents/groups/$(g)/members/$(uid); }
     function isMember(g) { return signedIn() && exists(memberPath(g, request.auth.uid)); }
+    // Instante (ms) en que se cierra cada carrera: viernes 00:00 hora de España, es decir, el jueves a las 23:59.
+    // El mapa se genera con `npm run gen:rules` a partir de src/data/f1.ts; no lo edites a mano.
+    function closeAt(raceId) {
+      return {
+        // BEGIN CLOSES
+        'r01': 1772751600000,
+        'r02': 1773356400000,
+        'r03': 1774566000000,
+        'r04': 1777586400000,
+        'r05': 1779400800000,
+        'r06': 1780610400000,
+        'r07': 1781215200000,
+        'r08': 1782424800000,
+        'r09': 1783029600000,
+        'r10': 1784239200000,
+        'r11': 1784844000000,
+        'r12': 1787263200000,
+        'r13': 1788472800000,
+        'r14': 1789077600000,
+        'r15': 1790287200000,
+        'r16': 1791496800000,
+        'r17': 1792706400000,
+        'r18': 1793314800000,
+        'r19': 1793919600000,
+        'r20': 1795129200000,
+        'r21': 1795734000000,
+        'r22': 1796338800000
+        // END CLOSES
+      }[raceId];
+    }
     function isAdmin(g) { return isMember(g) && get(memberPath(g, request.auth.uid)).data.role == 'admin'; }
 
     // Datos de F1 (calendario, pilotos, resultados): solo los escribe el servidor.
@@ -58,13 +88,17 @@ service cloud.firestore {
           && (request.auth.uid == uid || isAdmin(g));
       }
 
-      // Predicciones: cada uno lee y escribe solo la suya.
+      // Predicciones: cada uno lee y escribe solo la suya, y solo hasta el cierre de esa carrera.
       // Las de los demás se publicarán tras el cierre en /revealed (Cloud Function).
       match /picks/{pickId} {
         allow read: if isMember(g) && resource.data.uid == request.auth.uid;
         allow create, update: if isMember(g)
+          && request.resource.data.keys().hasOnly(['uid', 'raceId', 'pole', 'team', 'top10', 'updatedAt'])
           && request.resource.data.uid == request.auth.uid
-          && pickId == request.resource.data.raceId + '__' + request.auth.uid;
+          && pickId == request.resource.data.raceId + '__' + request.auth.uid
+          && request.resource.data.top10 is list
+          && request.resource.data.top10.size() == 10
+          && request.time.toMillis() < closeAt(request.resource.data.raceId);
         allow delete: if false;
       }
 

@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { Button, Card, Screen, text } from '../../components/ui';
 import { listMyGroups, type Membership } from '../../data/groups';
+import { refreshPicks } from '../../data/picks';
 import { signOut } from '../../firebase/auth';
 import { useAuth } from '../../firebase/AuthContext';
 import { colors } from '../../theme';
@@ -17,7 +18,12 @@ export default function Grupos() {
       if (!user) return;
       let alive = true;
       listMyGroups(user.uid)
-        .then((g) => alive && (setGroups(g), setError('')))
+        .then((g) => {
+          if (!alive) return;
+          setGroups(g);
+          setError('');
+          refreshPicks(user.uid).catch(() => {});
+        })
         .catch(() => alive && setError('No se pudieron cargar tus grupos. Comprueba la conexión.'));
       return () => {
         alive = false;

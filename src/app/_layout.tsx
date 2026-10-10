@@ -1,6 +1,9 @@
 import { Stack } from 'expo-router';
+import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { LoginScreen } from '../components/LoginScreen';
+import { refreshPicks } from '../data/picks';
+import { resetPicks } from '../data/picksStore';
 import { AuthProvider, useAuth } from '../firebase/AuthContext';
 import { colors } from '../theme';
 
@@ -14,6 +17,11 @@ export default function RootLayout() {
 
 function Gate() {
   const { user, guest, loading } = useAuth();
+  const uid = user?.uid;
+  useEffect(() => {
+    if (uid) refreshPicks(uid).catch(() => {});
+    else resetPicks();
+  }, [uid]);
   if (loading) return null;
   if (!user && !guest) return <LoginScreen />;
   return (
