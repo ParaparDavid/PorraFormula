@@ -23,7 +23,7 @@ beforeEach(async () => {
     await setDoc(doc(db, 'groups/g1/members/beto'), { uid: 'beto', role: 'member' });
     await setDoc(doc(db, 'inviteCodes/ABC123'), { groupId: 'g1', createdBy: 'ana' });
     await setDoc(doc(db, 'groups/g1/picks/r01__beto'), { uid: 'beto', raceId: 'r01', pole: 'VER' });
-    await setDoc(doc(db, 'f1/races/r01'), { name: 'Australia' });
+    await setDoc(doc(db, 'f1/s2026/races/r01'), { name: 'Australia' });
   });
 });
 
@@ -31,9 +31,9 @@ const as = (uid: string) => env.authenticatedContext(uid).firestore();
 const anon = () => env.unauthenticatedContext().firestore();
 
 describe('datos de F1', () => {
-  it('sin sesión no se leen', () => assertFails(getDoc(doc(anon(), 'f1/races/r01'))));
-  it('con sesión se leen', () => assertSucceeds(getDoc(doc(as('carla'), 'f1/races/r01'))));
-  it('nadie escribe desde la app', () => assertFails(setDoc(doc(as('ana'), 'f1/races/r02'), { name: 'x' })));
+  it('sin sesión no se leen', () => assertFails(getDoc(doc(anon(), 'f1/s2026/races/r01'))));
+  it('con sesión se leen', () => assertSucceeds(getDoc(doc(as('carla'), 'f1/s2026/races/r01'))));
+  it('nadie escribe desde la app', () => assertFails(setDoc(doc(as('ana'), 'f1/s2026/races/r02'), { name: 'x' })));
 });
 
 describe('perfil y mis grupos', () => {
